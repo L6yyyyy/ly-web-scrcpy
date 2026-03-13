@@ -1,66 +1,47 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
 <title>LY Web Scrcpy</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#1e1e2e;color:#fff;padding:20px;font-family:system-ui}
-.container{max-width:900px;margin:0 auto}
-.title{text-align:center;font-size:26px;margin:20px 0}
-.card{background:#2d2d3f;padding:24px;border-radius:12px}
-input{width:100%;padding:14px;margin:10px 0;border-radius:8px;border:none;background:#3d3d5f;color:#fff;font-size:16px}
-button{width:100%;padding:14px;background:#7c5cfc;border:none;color:#fff;border-radius:8px;font-size:16px;cursor:pointer}
-button:hover{background:#6a4bee}
-#video{width:100%;background:#000;border-radius:8px;margin-top:20px}
-.log{color:#ccc;margin-top:10px}
+  body{background:#1e1e2e;color:white;padding:30px;font-family:Arial}
+  .box{max-width:800px;margin:auto;background:#2d2d3f;padding:25px;border-radius:12px}
+  input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:0}
+  input{background:#3d3d5f;color:white}
+  button{background:#7d5afc;color:white;font-size:16px}
+  #log{margin-top:10px;color:#ccc}
+  video{width:100%;background:#000;border-radius:8px;margin-top:20px}
 </style>
 </head>
 <body>
-<div class="container">
-<div class="title">LY Web Scrcpy 安卓远程控制</div>
-<div class="card">
-<input id="ip" placeholder="输入设备IP:端口 例如 192.168.1.100:5555">
-<button onclick="connectDevice()">连接设备</button>
-<div class="log" id="log"></div>
-<video id="video" autoplay playsinline></video>
-</div>
+<div class="box">
+  <h2>LY Web Scrcpy 安卓控制</h2>
+  <input id="ip" placeholder="输入设备IP:端口 如 192.168.1.5:37291">
+  <button onclick="connect()">连接设备</button>
+  <div id="log"></div>
+  <video id="video" autoplay playsinline></video>
 </div>
 
 <script>
 let ws;
-function connectDevice() {
-  const ip = document.getElementById('ip').value;
-  if (!ip) {
-    alert("请输入设备IP和端口");
-    return;
-  }
-  setLog("正在连接：" + ip);
+function connect() {
+  let ip = document.getElementById("ip").value;
+  if(!ip) return alert("请输入IP");
+  log("连接中...");
 
-  ws = new WebSocket(`ws://${location.host}`);
-  ws.onopen = function() {
-    setLog("WebSocket 已连接");
-    ws.send(JSON.stringify({ type: 'connect', ip: ip }));
+  ws = new WebSocket("ws://"+location.host);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({action:"connect",ip:ip}));
   };
-  ws.onmessage = function(e) {
-    const data = JSON.parse(e.data);
-    if (data.type === 'status') {
-      setLog(data.text);
-    } else if (data.type === 'error') {
-      setLog("错误：" + data.text);
-    }
+  ws.onmessage = (e) => {
+    let msg = JSON.parse(e.data);
+    log(msg.text || msg.error || "消息："+e.data);
   };
-  ws.onclose = function() {
-    setLog("连接关闭");
-  };
-  ws.onerror = function() {
-    setLog("连接失败，请检查IP、端口、ADB权限");
-  };
+  ws.onerror = () => log("连接失败");
 }
 
-function setLog(text) {
-  document.getElementById('log').innerText = text;
+function log(text){
+  document.getElementById("log").innerText = text;
 }
 </script>
 </body>
