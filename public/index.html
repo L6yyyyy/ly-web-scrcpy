@@ -2,23 +2,27 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Web Scrcpy - 自动扫描</title>
+<title>Web Scrcpy</title>
 <style>
 body{background:#121212;color:#fff;padding:30px;font-family:Arial}
 .box{max-width:900px;margin:auto;background:#1e1e1e;padding:25px;border-radius:12px}
-button{width:100%;padding:14px;margin:8px 0;border-radius:8px;border:0;background:#6a5acd;color:white;font-size:16px}
+input,button{width:100%;padding:14px;margin:8px 0;border-radius:8px;border:0}
+input{background:#2d2d2d;color:white;font-size:16px}
+button{background:#6a5acd;color:white;font-size:16px;cursor:pointer}
 .device{background:#2d2d2d;padding:12px;margin:6px 0;border-radius:8px;cursor:pointer}
 #log{color:#aaa;margin-top:10px}
-video{width:100%;background:#000;border-radius:10px;margin-top:20px}
 </style>
 </head>
 <body>
 <div class="box">
-  <h2>Web Scrcpy 自动扫描</h2>
+  <h2>Web Scrcpy 控制</h2>
+  
+  <input id="ip" placeholder="输入IP:端口（如 192.168.1.3:38521）">
+  <button onclick="connectManual()">✅ 手动连接</button>
   <button onclick="scan()">🔍 扫描局域网设备</button>
+  
   <div id="list"></div>
   <div id="log"></div>
-  <video id="video" autoplay playsinline></video>
 </div>
 
 <script>
@@ -26,37 +30,42 @@ let ws;
 connectWS();
 
 function connectWS() {
-  ws = new WebSocket('ws://' + location.hostname + ':8081');
+  ws = new WebSocket("ws://" + location.hostname + ":8081");
   ws.onmessage = (e) => {
-    if (typeof e.data === 'string') {
-      let msg = JSON.parse(e.data);
+    try {
+      const msg = JSON.parse(e.data);
       if (msg.text) log(msg.text);
-      if (msg.action === 'deviceFound') addDevice(msg.ip);
-    }
+      if (msg.action === "deviceFound") addDevice(msg.ip);
+    } catch {}
   };
 }
 
+function connectManual() {
+  const ip = document.getElementById("ip").value;
+  if (!ip) return alert("请输入IP");
+  log("手动连接：" + ip);
+  ws.send(JSON.stringify({ action: "connect", ip: ip }));
+}
+
 function scan() {
-  log('扫描中...');
-  document.getElementById('list').innerHTML = '';
-  ws.send(JSON.stringify({ action: 'scan' }));
+  log("扫描真实局域网…");
+  document.getElementById("list").innerHTML = "";
+  ws.send(JSON.stringify({ action: "scan" }));
 }
 
 function addDevice(ip) {
-  let div = document.createElement('div');
-  div.className = 'device';
-  div.innerText = '📱 设备：' + ip;
-  div.onclick = () => connect(ip);
-  document.getElementById('list').append(div);
+  const div = document.createElement("div");
+  div.className = "device";
+  div.innerText = "📱 " + ip;
+  div.onclick = () => {
+    log("点击连接：" + ip);
+    ws.send(JSON.stringify({ action: "connect", ip: ip + ":5555" }));
+  };
+  document.getElementById("list").append(div);
 }
 
-function connect(ip) {
-  log('连接：' + ip);
-  ws.send(JSON.stringify({ action: 'connect', ip: ip }));
-}
-
-function log(t) {
-  document.getElementById('log').innerText = t;
+function log(text) {
+  document.getElementById("log").innerText = text;
 }
 </script>
 </body>
