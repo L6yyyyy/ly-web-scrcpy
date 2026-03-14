@@ -1,12 +1,9 @@
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y --no-install-recommends \
-    adb nodejs npm \
-    && apt clean && rm -rf /var/lib/apt/lists/*
-
+RUN apt update && apt install -y adb scrcpy nodejs npm
 WORKDIR /app
 COPY . .
-RUN npm install
-EXPOSE 8080 8081
+RUN npm install express ws
+EXPOSE 8080
 CMD ["node","server.js"]
